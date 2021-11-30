@@ -66,10 +66,10 @@ class Products with ChangeNotifier {
   //   notifyListeners();
   // }
 
-  void addProduct(Product product) {
+  Future<void> addProduct(Product product) {
     const url =
         'https://shoppingapp-c85a1-default-rtdb.asia-southeast1.firebasedatabase.app/products.json';
-    http
+    return http
         .post(url,
             body: json.encode({
               'title': product.title,
