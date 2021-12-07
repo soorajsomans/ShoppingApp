@@ -40,7 +40,8 @@ class Products with ChangeNotifier {
     // ),
   ];
   final String authToken;
-  Products(this.authToken, this._items);
+  final String userId;
+  Products(this.authToken, this.userId, this._items);
   // var _showFavoritesOnly = false;
 
   List<Product> get items {
@@ -68,15 +69,22 @@ class Products with ChangeNotifier {
   //   notifyListeners();
   // }
 
-  Future<void> fetchAndSetProduct() async {
-    final url =
-        'https://shoppingapp-c85a1-default-rtdb.asia-southeast1.firebasedatabase.app/products.json?auth=$authToken';
+  Future<void> fetchAndSetProduct([bool filterByUser = false]) async {
+    final filterString =
+        filterByUser ? 'orderBy="creatorId"&equalTo="$userId"' : '';
+    var url =
+        'https://shoppingapp-c85a1-default-rtdb.asia-southeast1.firebasedatabase.app/products.json?auth=$authToken&$filterString';
     try {
       final response = await http.get(url);
       final extractedData = json.decode(response.body) as Map<String, dynamic>;
       if (extractedData == null) {
         return;
       }
+      url =
+          'https://shoppingapp-c85a1-default-rtdb.asia-southeast1.firebasedatabase.app/userFavorites/$userId.json?auth=$authToken';
+
+      final favoriteResponse = await http.get(url);
+      final favoriteData = json.decode(favoriteResponse.body);
       final List<Product> loadedProducts = [];
       extractedData.forEach((prodId, prodData) {
         loadedProducts.add(Product(
@@ -84,7 +92,8 @@ class Products with ChangeNotifier {
           title: prodData['title'],
           description: prodData['description'],
           price: prodData['price'],
-          isFavorite: prodData['isFavorite'],
+          isFavorite:
+              favoriteData == null ? false : favoriteData[prodId] ?? false,
           imageUrl: prodData['imageUrl'],
         ));
       });
@@ -105,7 +114,8 @@ class Products with ChangeNotifier {
             'description': product.description,
             'price': product.price,
             'imageUrl': product.imageUrl,
-            'isFavorite': product.isFavorite
+            'creatorId': userId,
+            // 'isFavorite': product.isFavorite
           }));
       final newProduct = Product(
         title: product.title,
