@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth.dart';
@@ -12,7 +14,10 @@ import './providers/products.dart';
 import './providers/orders.dart';
 import './screens/auth_screen.dart';
 
-void main() => runApp(MyApp());
+void main() {
+  HttpOverrides.global = MyHttpOverrides();
+  runApp(MyApp());
+}
 
 class MyApp extends StatelessWidget {
   @override
@@ -28,8 +33,8 @@ class MyApp extends StatelessWidget {
           ),
           ChangeNotifierProvider(create: (ctx) => Cart()),
           ChangeNotifierProxyProvider<Auth, Orders>(
-              update: (ctx, auth, previousOrders) => Orders(
-                  auth.token, previousOrders == null ? [] : previousOrders)),
+              update: (ctx, auth, previousOrders) => Orders(auth.token,
+                  auth.userId, previousOrders == null ? [] : previousOrders)),
         ],
         child: Consumer<Auth>(
           builder: (ctx, auth, _) => MaterialApp(
@@ -48,5 +53,14 @@ class MyApp extends StatelessWidget {
             },
           ),
         ));
+  }
+}
+
+class MyHttpOverrides extends HttpOverrides {
+  @override
+  HttpClient createHttpClient(SecurityContext context) {
+    return super.createHttpClient(context)
+      ..badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
   }
 }
